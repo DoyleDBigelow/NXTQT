@@ -24,6 +24,7 @@ class SensorWorker(QObject):
         self._running = False
 
     def start(self):
+        self._running = True
         while self._running:
             self.poll()
             time.sleep(0.1)
