@@ -1,4 +1,5 @@
 # NXTQT Remote Control
+A small remote control app for an NXT Mindstorms robot using nxt-python and PySide6.
 ## Installation
 Tested on Python3.13 on Fedora 42
 1. Create virtual environment
