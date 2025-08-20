@@ -5,9 +5,9 @@ import nxt.motor
 import nxt.sensor
 
 # PySide Imports
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QPushButton
-from PySide6.QtGui import QCloseEvent, QKeyEvent
-from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QApplication
+from PySide6.QtGui import QCloseEvent
+from PySide6.QtCore import Qt, QEvent
 
 # Project Imports
 from form.controls import Controls
@@ -26,6 +26,7 @@ class Form(QWidget):
         self.createWidgets()
         self.connectEvents()
         self.createLayout()
+        QApplication.instance().installEventFilter(self)
 
     def setupBrick(self):
         self.motor_controller = MotorsController(brick=self.brick, parent=self)
@@ -74,16 +75,15 @@ class Form(QWidget):
             sensor_display.stopAndDestroyThread()
         event.accept()
 
-    def keyPressEvent(self, event: QKeyEvent):
-        if event.isAutoRepeat():  # ignore OS key repeat
-            event.accept()
-            return
-        self.controls.keyPressed(event.key())
-        return super().keyPressEvent(event)
+    def eventFilter(self, obj, event: QEvent):
+        if event.type() in (QEvent.Type.KeyPress, QEvent.Type.KeyRelease):
+            if event.isAutoRepeat():
+                return True
 
-    def keyReleaseEvent(self, event: QKeyEvent):
-        if event.isAutoRepeat():  # ignore OS key repeat
-            event.accept()
-            return
-        self.controls.keyReleased(event.key())
-        return super().keyReleaseEvent(event)
+            if event.type() == QEvent.Type.KeyPress:
+                self.controls.keyPressed(event.key())
+            elif event.type() == QEvent.Type.KeyRelease:
+                self.controls.keyReleased(event.key())
+
+            return True  # mark handled (don’t pass to children)
+        return super().eventFilter(obj, event)
