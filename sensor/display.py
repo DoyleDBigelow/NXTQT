@@ -7,6 +7,7 @@ import nxt.sensor.generic
 
 # PySide Imports
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox
+from PySide6.QtCore import Qt
 
 # Project Imports
 from sensor.thread import SensorThread
@@ -26,6 +27,7 @@ class SensorDisplay(QWidget):
         self.startThread()
 
     def createWidgets(self):
+        self.header = QLabel(f"Port {self.port.value + 1}")
         self.combobox = QComboBox(parent=self)
         self.combobox.addItem("None", userData=(None, ""))
         self.combobox.addItem(
@@ -43,10 +45,13 @@ class SensorDisplay(QWidget):
         self.setLayout(layout)
 
         reading_layout = QHBoxLayout()
-        reading_layout.setSpacing(0)
-        reading_layout.addWidget(self.reading_value)
-        reading_layout.addWidget(self.unit)
+        reading_layout.setSpacing(3)
+        reading_layout.addWidget(
+            self.reading_value, alignment=Qt.AlignmentFlag.AlignRight
+        )
+        reading_layout.addWidget(self.unit, alignment=Qt.AlignmentFlag.AlignLeft)
 
+        layout.addWidget(self.header, alignment=Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.combobox)
         layout.addLayout(reading_layout)
 
