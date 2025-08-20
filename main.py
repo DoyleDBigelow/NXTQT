@@ -8,11 +8,14 @@ import nxt.locator
 from PySide6.QtWidgets import QApplication
 
 # Project Imports
-from form.form import ControlGUI
+from form.form import Form
 
 if __name__ == "__main__":
     brick = nxt.locator.find(host="00:16:53:11:1C:A9")
     app = QApplication(sys.argv)
-    gui = ControlGUI(brick)
+    gui = Form(brick)
     gui.show()
-    sys.exit(app.exec())
+    res = app.exec()
+    brick.close()
+    sys.exit(res)
+
