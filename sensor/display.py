@@ -2,6 +2,7 @@
 
 # NXT Imports
 import nxt.brick
+import nxt.error
 import nxt.sensor
 import nxt.sensor.generic
 
@@ -67,13 +68,25 @@ class SensorDisplay(QWidget):
 
     def createThread(self):
         sensor_class, unit = self.combobox.currentData()
-        self.unit.setText(unit)
+
+        # If no sensor is selected, simply return
         if sensor_class is None:
+            self.unit.setText("")
             return
 
-        sensor = sensor_class(brick=self.brick, port=self.port)
+        try:
+            sensor = sensor_class(brick=self.brick, port=self.port)
+        # If sensor creation failed, report and return
+        except Exception as e:
+            print(f"Failed to instantiate port {self.port.value} sensor {sensor_class}: {e}")
+            self.reading_value.setText("Error")
+            self.unit.setText("")
+            return
+
         self.polling_thread = SensorThread(sensor=sensor, parent=self)
         self.polling_thread.worker.read_signal.connect(self.setValue)
+
+        self.unit.setText(unit)
 
     def stopAndDestroyThread(self):
         try:
@@ -85,7 +98,12 @@ class SensorDisplay(QWidget):
 
     def startThread(self):
         if self.polling_thread is not None:
-            self.polling_thread.start()
+            try:
+                self.polling_thread.start()
+            except Exception as e:
+                print(f"Failed to start polling thread for port {self.port.value}")
+                self.stopAndDestroyThread()
+                return
 
     def recreate(self):
         self.stopAndDestroyThread()
