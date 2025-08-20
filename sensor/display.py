@@ -7,8 +7,16 @@ import nxt.sensor
 import nxt.sensor.generic
 
 # PySide Imports
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox
+from PySide6.QtWidgets import (
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QLabel,
+    QComboBox,
+    QPushButton,
+)
 from PySide6.QtCore import Qt
+import qtawesome
 
 # Project Imports
 from sensor.thread import SensorThread
@@ -22,14 +30,23 @@ class SensorDisplay(QWidget):
         self.port = port
         self.polling_thread: SensorThread | None = None
         self.createWidgets()
+        self.configureWidgets()
         self.createLayout()
         self.createThread()
         self.connectEvents()
         self.startThread()
 
     def createWidgets(self):
-        self.header = QLabel(f"Port {self.port.value + 1}")
+        self.header = QLabel(f"Port {self.port.value + 1}", parent=self)
+        self.restart = QPushButton("", parent=self)
         self.combobox = QComboBox(parent=self)
+        self.reading_value = QLabel("", parent=self)
+        self.unit = QLabel("", parent=self)
+
+    def configureWidgets(self):
+        self.restart.setIcon(qtawesome.icon("fa6s.rotate"))
+        self.restart.setToolTip("Reset the sensor connection")
+
         self.combobox.addItem("None", userData=(None, ""))
         self.combobox.addItem(
             "Ultrasonic", userData=(nxt.sensor.generic.Ultrasonic, "cm")
@@ -38,12 +55,15 @@ class SensorDisplay(QWidget):
         self.combobox.addItem("Light", userData=(nxt.sensor.generic.Light, "lu"))
         self.combobox.addItem("Color", userData=(nxt.sensor.generic.Color, "rgb"))
         self.combobox.addItem("Sound", userData=(nxt.sensor.generic.Sound, "db"))
-        self.reading_value = QLabel("", parent=self)
-        self.unit = QLabel("", parent=self)
 
     def createLayout(self):
         layout = QVBoxLayout(self)
         self.setLayout(layout)
+
+        top_layout = QHBoxLayout()
+        top_layout.setSpacing(3)
+        top_layout.addWidget(self.header, alignment=Qt.AlignmentFlag.AlignCenter)
+        top_layout.addWidget(self.restart, alignment=Qt.AlignmentFlag.AlignRight)
 
         reading_layout = QHBoxLayout()
         reading_layout.setSpacing(3)
@@ -52,13 +72,14 @@ class SensorDisplay(QWidget):
         )
         reading_layout.addWidget(self.unit, alignment=Qt.AlignmentFlag.AlignLeft)
 
-        layout.addWidget(self.header, alignment=Qt.AlignmentFlag.AlignCenter)
+        layout.addLayout(top_layout)
         layout.addWidget(self.combobox)
         layout.addLayout(reading_layout)
 
     def connectEvents(self):
         self.destroyed.connect(self.stopAndDestroyThread)
         self.combobox.currentIndexChanged.connect(self.changeSensor)
+        self.restart.clicked.connect(self.recreate)
 
     def changeSensor(self, _):
         self.recreate()
@@ -78,7 +99,9 @@ class SensorDisplay(QWidget):
             sensor = sensor_class(brick=self.brick, port=self.port)
         # If sensor creation failed, report and return
         except Exception as e:
-            print(f"Failed to instantiate port {self.port.value} sensor {sensor_class}: {e}")
+            print(
+                f"Failed to instantiate port {self.port.value} sensor {sensor_class}: {e}"
+            )
             self.reading_value.setText("Error")
             self.unit.setText("")
             return
